@@ -13,9 +13,10 @@ export class PanZoomState {
 
   public isPanEnabled: boolean;
   public onPanZoomChange?: (pan: Point, zoom: number) => void;
+  public onPanEnabledChange?: (enabled: boolean) => void;
 
   constructor() {
-    this.isPanEnabled = true;
+    this.isPanEnabled = false;
     this.resizeObserver = new ResizeObserver(() => {
       this.resize();
       if (!this.isDirty) {
@@ -27,6 +28,7 @@ export class PanZoomState {
   public updateElement(diagramView: SVGElement, { pan, zoom }: Pick<State, 'pan' | 'zoom'>) {
     this.pzoom?.destroy();
     let hammer: HammerManager | undefined;
+    const self = this; // Reference to class instance for use in event handlers
     this.pzoom = panzoom(diagramView, {
       center: true,
       controlIconsEnabled: false,
@@ -44,7 +46,10 @@ export class PanZoomState {
             pannedY = 0;
           };
           const handlePan = (event: HammerInput) => {
-            instance.panBy({ x: event.deltaX - pannedX, y: event.deltaY - pannedY });
+            // Only handle pan if pan is enabled
+            if (self.isPanEnabled) {
+              instance.panBy({ x: event.deltaX - pannedX, y: event.deltaY - pannedY });
+            }
             pannedX = event.deltaX;
             pannedY = event.deltaY;
           };
@@ -65,7 +70,10 @@ export class PanZoomState {
               x: event.center.x,
               y: event.center.y
             });
-            handlePan(event);
+            // Don't handle pan during pinch if pan is disabled
+            if (self.isPanEnabled) {
+              handlePan(event);
+            }
           });
           options.svgElement.addEventListener('touchmove', function (event) {
             event.preventDefault();
@@ -115,8 +123,9 @@ export class PanZoomState {
       this.pzoom.enablePan();
       this.pzoom.enableZoom();
     } else {
-      this.pzoom.disableZoom();
       this.pzoom.disablePan();
+      // Keep zoom enabled even when pan is disabled
+      this.pzoom.enableZoom();
     }
 
     if (pan === undefined && zoom === undefined) {
@@ -148,10 +157,37 @@ export class PanZoomState {
     this.pzoom?.zoomOut();
   }
 
+  public center() {
+    this.pzoom?.center();
+  }
+
   public reset() {
     this.pzoom?.reset();
     // Zoom out a bit to avoid overlap with the toolbar
     this.pzoom?.zoom(0.875);
     this.isDirty = false;
+  }
+
+  public enablePan() {
+    this.isPanEnabled = true;
+    this.pzoom?.enablePan();
+    this.pzoom?.enableZoom();
+    this.onPanEnabledChange?.(true);
+  }
+
+  public disablePan() {
+    this.isPanEnabled = false;
+    this.pzoom?.disablePan();
+    // Keep zoom enabled while disabling pan
+    this.pzoom?.enableZoom();
+    this.onPanEnabledChange?.(false);
+  }
+
+  public togglePan() {
+    if (this.isPanEnabled) {
+      this.disablePan();
+    } else {
+      this.enablePan();
+    }
   }
 }

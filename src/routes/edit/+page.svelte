@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Actions from '$/components/Actions.svelte';
   import Card from '$/components/Card/Card.svelte';
   import DiagramDocButton from '$/components/DiagramDocumentationButton.svelte';
   import Editor from '$/components/Editor.svelte';
@@ -124,7 +123,6 @@
 
             <div class="group flex flex-wrap justify-between gap-4 sm:gap-6">
               <Preset />
-              <Actions />
             </div>
           </div>
         </Resizable.Pane>
