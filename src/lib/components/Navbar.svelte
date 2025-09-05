@@ -8,8 +8,11 @@
 </script>
 
 <script lang="ts">
+  // Navbar has no props for now.
 </script>
 
 <nav class="z-50 flex p-4 sm:p-6">
-  <div class="flex flex-1 items-center gap-4"></div>
+  <div class="flex flex-1 items-center gap-4">
+    <slot />
+  </div>
 </nav>

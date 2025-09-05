@@ -1,29 +1,32 @@
 <script lang="ts">
-  import { Button } from '$/components/ui/button';
-  import type { PanZoomState } from '$/util/panZoom';
-  import CenterIcon from '~icons/material-symbols/open-in-full-rounded';
-  import PanIcon from '~icons/material-symbols/pan-tool-rounded';
-  import ResetIcon from '~icons/material-symbols/screenshot-frame-2';
-  import ZoomInIcon from '~icons/material-symbols/zoom-in';
-  import ZoomOutIcon from '~icons/material-symbols/zoom-out';
-  import FloatingToolbar from './FloatingToolbar.svelte';
+  import { Button } from '$lib/components/ui/button';
+  import { Trash2 } from 'lucide-svelte';
 
   let {
-    panZoomState,
-    createNode
-  }: { panZoomState: PanZoomState; createNode?: (shapeId: string) => void } = $props();
+    nodeId,
+    position = { x: 0, y: 0 },
+    changeNodeShape,
+    deleteNode,
+    onClose
+  }: {
+    nodeId: string;
+    position?: { x: number; y: number };
+    changeNodeShape?: (nodeId: string, shapeId: string) => void;
+    deleteNode?: (nodeId: string) => void;
+    onClose?: () => void;
+  } = $props();
 
   // shapes menu state
   let showShapes = $state(false);
   let activeTab = $state('Basic');
-  let hoveredShape = $state(null);
+  let hoveredShape = $state('');
   let tooltipPosition = $state({ x: 0, y: 0 });
 
   const basicShapes = [
     {
       id: 'text',
       label: 'Text Block',
-      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><text x="24" y="28" text-anchor="middle" font-size="12" fill="currentColor">TEXT</text></svg>`
+      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><text x="24" y="28" text-anchor="middle" font-size="10" fill="currentColor">TEXT</text></svg>`
     },
     {
       id: 'rect',
@@ -33,12 +36,12 @@
     {
       id: 'rounded',
       label: 'Rounded',
-      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="16" width="28" height="16" rx="8" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>`
+      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="16" width="28" height="16" rx="8" ry="8" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>`
     },
     {
       id: 'stadium',
       label: 'Stadium',
-      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="18" width="28" height="12" rx="6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>`
+      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="18" width="28" height="12" rx="6" ry="6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>`
     },
     {
       id: 'tri',
@@ -118,12 +121,12 @@
     {
       id: 'odd',
       label: 'Odd',
-      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-width="1.5" d="M15 20 Q10 15 15 10 Q20 15 25 10 Q30 15 35 10 Q40 15 35 20 Q30 25 35 30 Q40 35 35 40 Q30 35 25 40 Q20 35 15 40 Q10 35 15 30 Q20 25 15 20 Z"/></svg>`
+      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 20 Q10 15 15 10 Q20 15 25 10 Q30 15 35 10 Q40 15 35 20 Q30 25 35 30 Q40 35 35 40 Q30 35 25 40 Q20 35 15 40 Q10 35 15 30 Q20 25 15 20 Z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>`
     },
     {
       id: 'anchor',
       label: 'Anchor',
-      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="12" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="24" y1="16" x2="24" y2="36" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M12 28 Q12 36 24 36 Q36 36 36 28"/><line x1="18" y1="20" x2="30" y2="20" stroke="currentColor" stroke-width="1.5"/></svg>`
+      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="12" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="24" y1="16" x2="24" y2="36" stroke="currentColor" stroke-width="1.5"/><path d="M12 28 Q12 36 24 36 Q36 36 36 28" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="18" y1="20" x2="30" y2="20" stroke="currentColor" stroke-width="1.5"/></svg>`
     }
   ];
 
@@ -226,7 +229,7 @@
     {
       id: 'delay',
       label: 'Delay',
-      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="16" width="28" height="16" stroke="currentColor" stroke-width="1.5" fill="none"/><path stroke="currentColor" stroke-width="1.5" d="M38 16 Q42 24 38 32"/></svg>`
+      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="16" width="28" height="16" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M38 16 Q42 24 38 32" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>`
     },
     {
       id: 'junction',
@@ -256,17 +259,17 @@
     {
       id: 'comment',
       label: 'Comment',
-      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-width="1.5" d="M18 10 Q14 10 14 14 L14 20 Q14 24 10 24 Q14 24 14 28 L14 34 Q14 38 18 38"/></svg>`
+      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 10 Q14 10 14 14 L14 20 Q14 24 10 24 Q14 24 14 28 L14 34 Q14 38 18 38" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>`
     },
     {
       id: 'brace-r',
       label: 'Comment Right',
-      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-width="1.5" d="M30 10 Q34 10 34 14 L34 20 Q34 24 38 24 Q34 24 34 28 L34 34 Q34 38 30 38"/></svg>`
+      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M30 10 Q34 10 34 14 L34 20 Q34 24 38 24 Q34 24 34 28 L34 34 Q34 38 30 38" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>`
     },
     {
       id: 'braces',
       label: 'Braces',
-      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-width="1.5" d="M18 10 Q14 10 14 14 L14 20 Q14 24 10 24 Q14 24 14 28 L14 34 Q14 38 18 38"/><path stroke="currentColor" stroke-width="1.5" d="M30 10 Q34 10 34 14 L34 20 Q34 24 38 24 Q34 24 34 28 L34 34 Q34 38 30 38"/></svg>`
+      svg: `<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 10 Q14 10 14 14 L14 20 Q14 24 10 24 Q14 24 14 28 L14 34 Q14 38 18 38" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M30 10 Q34 10 34 14 L34 20 Q34 24 38 24 Q34 24 34 28 L34 34 Q34 38 30 38" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>`
     },
     {
       id: 'summary',
@@ -323,36 +326,19 @@
     }
   ];
 
-  import { onMount } from 'svelte';
+  function handleShapeSelect(shapeId: string) {
+    changeNodeShape?.(nodeId, shapeId);
+    showShapes = false;
+    onClose?.();
+  }
 
-  // local pressed state for the Toggle. Default should be disabled (false).
-  let pressed = $state(false);
-  let initialized = false;
-
-  onMount(() => {
-    // initialize from the panZoomState if provided
-    if (panZoomState) {
-      pressed = !!panZoomState.isPanEnabled;
-      // keep local pressed in sync when pan state changes elsewhere
-      panZoomState.onPanEnabledChange = (enabled: boolean) => {
-        pressed = enabled;
-      };
-    }
-    initialized = true;
-  });
-
-  // when the toggle is changed by the user, enable/disable pan on the panZoomState
-  $effect(() => {
-    if (!initialized || !panZoomState) return;
-    if (pressed) {
-      panZoomState.enablePan();
-    } else {
-      panZoomState.disablePan();
-    }
-  });
+  function handleDeleteNode() {
+    deleteNode?.(nodeId);
+    onClose?.();
+  }
 
   function handleShapeHover(shape: any, event: MouseEvent) {
-    hoveredShape = shape;
+    hoveredShape = shape.label;
     const rect = (event.target as HTMLElement).getBoundingClientRect();
     tooltipPosition = {
       x: rect.left + rect.width / 2,
@@ -361,115 +347,125 @@
   }
 
   function handleShapeLeave() {
-    hoveredShape = null;
+    hoveredShape = '';
   }
 
   // Clear tooltip when menu closes
   $effect(() => {
     if (!showShapes) {
-      hoveredShape = null;
+      hoveredShape = '';
     }
+  });
+
+  $effect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Element;
+      if (!target.closest('.node-toolbar')) {
+        onClose?.();
+      }
+    };
+
+    // Add a small delay to prevent immediate closing
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('click', handleClickOutside);
+    };
   });
 </script>
 
-<FloatingToolbar>
-  <!-- Pan toggle button: styled to match attached images -->
-  <button
-    aria-pressed={pressed}
-    title="Pan toggle"
-    class={[
-      'rounded-xl p-2',
-      pressed ? 'bg-slate-900 text-white' : 'bg-white text-slate-700',
-      'border border-transparent shadow-sm'
-    ]}
-    onclick={() => (pressed = !pressed)}>
-    <span class="sr-only">Toggle pan</span>
-    <PanIcon />
-  </button>
-
-  <!-- Shapes menu button -->
-  <div class="relative">
-    <button
-      class="rounded-xl border border-transparent bg-white p-2 text-slate-700 shadow-sm"
-      title="Shapes"
-      aria-label="Open shapes menu"
-      onclick={() => (showShapes = !showShapes)}>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-        ><path stroke="currentColor" stroke-width="1.5" d="M12 4 L16 10 L8 10 Z" /><circle
-          cx="18"
-          cy="16"
-          r="2"
+<!-- Node Toolbar -->
+<div
+  class="node-toolbar fixed z-50 rounded-lg border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+  style="left: {position.x}px; top: {position.y}px;">
+  <div class="flex items-center gap-2">
+    <!-- Change Shape Button -->
+    <Button
+      variant="outline"
+      size="sm"
+      onclick={() => (showShapes = !showShapes)}
+      class="h-8 px-2 text-xs">
+      <svg class="mr-1 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M12 2 L22 8.5 L17 21 L7 21 L2 8.5 Z"
           stroke="currentColor"
-          stroke-width="1.5" /></svg>
-    </button>
+          stroke-width="1.5"
+          fill="none" />
+      </svg>
+      Change Shape
+    </Button>
 
-    {#if showShapes}
-      <div
-        class="absolute right-0 z-50 mt-2 min-w-[320px] max-w-[400px] rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
-        <!-- Tabs -->
-        <div class="flex border-b border-gray-200 dark:border-gray-700">
-          {#each ['Basic', 'Process', 'Technical'] as tab}
+    <!-- Delete Button -->
+    <Button
+      variant="outline"
+      size="sm"
+      onclick={handleDeleteNode}
+      class="h-8 px-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700">
+      <Trash2 class="mr-1 h-4 w-4" />
+      Delete
+    </Button>
+
+    <!-- Close Button -->
+    <Button
+      variant="ghost"
+      size="sm"
+      onclick={onClose}
+      class="h-8 w-8 p-0 text-gray-500 hover:text-gray-700">
+      ×
+    </Button>
+  </div>
+
+  <!-- Shapes Menu (similar to PanZoomToolbar) -->
+  {#if showShapes}
+    <div
+      class="z-60 absolute left-0 top-full mt-2 min-w-[320px] max-w-[400px] rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+      <!-- Tabs -->
+      <div class="flex border-b border-gray-200 dark:border-gray-700">
+        {#each ['Basic', 'Process', 'Technical'] as tab}
+          <button
+            type="button"
+            class="flex-1 px-3 py-2 text-sm font-medium transition-colors {activeTab === tab
+              ? 'border-b-2 border-blue-600 bg-blue-50 text-blue-600 dark:bg-blue-900/20'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
+            onclick={() => (activeTab = tab)}>
+            {tab}
+          </button>
+        {/each}
+      </div>
+
+      <!-- Shape Grid -->
+      <div class="max-h-64 overflow-y-auto p-3">
+        <div class="grid grid-cols-6 gap-2">
+          {#each activeTab === 'Basic' ? basicShapes : activeTab === 'Process' ? processShapes : technicalShapes as shape}
             <button
               type="button"
-              class="flex-1 px-3 py-2 text-sm font-medium transition-colors {activeTab === tab
-                ? 'border-b-2 border-blue-600 bg-blue-50 text-blue-600 dark:bg-blue-900/20'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
-              onclick={() => (activeTab = tab)}>
-              {tab}
+              class="group flex items-center justify-center rounded-lg border border-gray-200 p-3 transition-all duration-200 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-700"
+              onclick={() => handleShapeSelect(shape.id)}
+              onmouseenter={(e) => handleShapeHover(shape, e)}
+              onmouseleave={handleShapeLeave}>
+              <div
+                class="h-6 w-6 text-gray-700 group-hover:text-blue-600 dark:text-gray-300 dark:group-hover:text-blue-400">
+                {@html shape.svg}
+              </div>
             </button>
           {/each}
         </div>
-
-        <!-- Shape Grid -->
-        <div class="max-h-64 overflow-y-auto p-3">
-          <div class="grid grid-cols-6 gap-2">
-            {#each activeTab === 'Basic' ? basicShapes : activeTab === 'Process' ? processShapes : technicalShapes as shape}
-              <button
-                type="button"
-                class="group flex items-center justify-center rounded-lg border border-gray-200 p-3 transition-all duration-200 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-700"
-                onclick={() => {
-                  showShapes = false;
-                  createNode?.(shape.id);
-                }}
-                onmouseenter={(e) => handleShapeHover(shape, e)}
-                onmouseleave={handleShapeLeave}>
-                <div
-                  class="h-6 w-6 text-gray-700 group-hover:text-blue-600 dark:text-gray-300 dark:group-hover:text-blue-400">
-                  {@html shape.svg}
-                </div>
-              </button>
-            {/each}
-          </div>
-        </div>
-      </div>
-    {/if}
-  </div>
-
-  <!-- Custom tooltip -->
-  {#if hoveredShape && tooltipPosition.x > 0}
-    <div
-      class="pointer-events-none fixed z-50 rounded-lg bg-gray-900 px-2 py-1 text-sm font-medium text-white shadow-sm dark:bg-gray-700"
-      style="left: {tooltipPosition.x}px; top: {tooltipPosition.y}px; transform: translate(-50%, -100%);">
-      {hoveredShape.label}
-      <div
-        class="absolute left-1/2 top-full -translate-x-1/2 transform border-4 border-transparent border-t-gray-900 dark:border-t-gray-700">
       </div>
     </div>
   {/if}
+</div>
 
-  <Button variant="ghost" size="icon" title="Zoom In" onclick={() => panZoomState.zoomIn()}>
-    <ZoomInIcon />
-  </Button>
-
-  <Button variant="ghost" size="icon" title="Zoom Out" onclick={() => panZoomState.zoomOut()}>
-    <ZoomOutIcon />
-  </Button>
-
-  <Button variant="ghost" size="icon" title="Center" onclick={() => panZoomState.center()}>
-    <CenterIcon />
-  </Button>
-
-  <Button variant="ghost" size="icon" title="Reset View" onclick={() => panZoomState.reset()}>
-    <ResetIcon />
-  </Button>
-</FloatingToolbar>
+<!-- Custom Tooltip -->
+{#if hoveredShape}
+  <div
+    class="pointer-events-none fixed z-[100] -translate-x-1/2 -translate-y-full transform rounded bg-gray-900 px-2 py-1 text-xs text-white shadow-lg"
+    style="left: {tooltipPosition.x}px; top: {tooltipPosition.y}px;">
+    {hoveredShape}
+    <div
+      class="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 transform border-l-[4px] border-r-[4px] border-t-[4px] border-l-transparent border-r-transparent border-t-gray-900">
+    </div>
+  </div>
+{/if}
