@@ -343,7 +343,7 @@
 
   // when the toggle is changed by the user, enable/disable pan on the panZoomState
   $effect(() => {
-    if (!initialized || !panZoomState) return;
+    if (!initialized || !panZoomState) {return;}
     if (pressed) {
       panZoomState.enablePan();
     } else {

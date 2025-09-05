@@ -66,7 +66,7 @@
   function createNode(shapeId: string) {
     const state = get(inputStateStore);
     const code = state.code || '';
-    const newId = 'N' + Math.floor(Math.random() * 100000);
+    const newId = 'N' + Math.floor(Math.random() * 100_000);
 
     // Map shapeId to Mermaid flowchart node syntax using the new v11.3.0+ format
     const label = 'New node';
@@ -74,197 +74,260 @@
 
     // Use the new syntax: A@{ shape: rect } for v11.3.0+ shapes
     switch (shapeId) {
-      case 'text':
+      case 'text': {
         nodeText = `@{ shape: text, label: "${label}" }`;
         break;
-      case 'rect':
+      }
+      case 'rect': {
         nodeText = `@{ shape: rect, label: "${label}" }`;
         break;
-      case 'rounded':
+      }
+      case 'rounded': {
         nodeText = `@{ shape: rounded, label: "${label}" }`;
         break;
-      case 'stadium':
+      }
+      case 'stadium': {
         nodeText = `@{ shape: stadium, label: "${label}" }`;
         break;
-      case 'tri':
+      }
+      case 'tri': {
         nodeText = `@{ shape: tri, label: "${label}" }`;
         break;
-      case 'diam':
+      }
+      case 'diam': {
         nodeText = `@{ shape: diam, label: "${label}" }`;
         break;
-      case 'hex':
+      }
+      case 'hex': {
         nodeText = `@{ shape: hex, label: "${label}" }`;
         break;
-      case 'cyl':
+      }
+      case 'cyl': {
         nodeText = `@{ shape: cyl, label: "${label}" }`;
         break;
-      case 'h-cyl':
+      }
+      case 'h-cyl': {
         nodeText = `@{ shape: h-cyl, label: "${label}" }`;
         break;
-      case 'circ':
+      }
+      case 'circ': {
         nodeText = `@{ shape: circ, label: "${label}" }`;
         break;
-      case 'dbl-circ':
+      }
+      case 'dbl-circ': {
         nodeText = `@{ shape: dbl-circ, label: "${label}" }`;
         break;
-      case 'sm-circ':
+      }
+      case 'sm-circ': {
         nodeText = `@{ shape: sm-circ, label: "${label}" }`;
         break;
-      case 'fr-circ':
+      }
+      case 'fr-circ': {
         nodeText = `@{ shape: fr-circ, label: "${label}" }`;
         break;
-      case 'f-circ':
+      }
+      case 'f-circ': {
         nodeText = `@{ shape: f-circ, label: "${label}" }`;
         break;
-      case 'lean-l':
+      }
+      case 'lean-l': {
         nodeText = `@{ shape: lean-l, label: "${label}" }`;
         break;
-      case 'lean-r':
+      }
+      case 'lean-r': {
         nodeText = `@{ shape: lean-r, label: "${label}" }`;
         break;
-      case 'trap-b':
+      }
+      case 'trap-b': {
         nodeText = `@{ shape: trap-b, label: "${label}" }`;
         break;
-      case 'trap-t':
+      }
+      case 'trap-t': {
         nodeText = `@{ shape: trap-t, label: "${label}" }`;
         break;
-      case 'card':
+      }
+      case 'card': {
         nodeText = `@{ shape: card, label: "${label}" }`;
         break;
-      case 'odd':
+      }
+      case 'odd': {
         nodeText = `@{ shape: odd, label: "${label}" }`;
         break;
-      case 'anchor':
+      }
+      case 'anchor': {
         nodeText = `@{ shape: anchor, label: "${label}" }`;
         break;
+      }
       // Process shapes
-      case 'proc':
+      case 'proc': {
         nodeText = `@{ shape: proc, label: "${label}" }`;
         break;
-      case 'subproc':
+      }
+      case 'subproc': {
         nodeText = `@{ shape: subproc, label: "${label}" }`;
         break;
-      case 'tag-proc':
+      }
+      case 'tag-proc': {
         nodeText = `@{ shape: tag-proc, label: "${label}" }`;
         break;
-      case 'procs':
+      }
+      case 'procs': {
         nodeText = `@{ shape: procs, label: "${label}" }`;
         break;
-      case 'div-proc':
+      }
+      case 'div-proc': {
         nodeText = `@{ shape: div-proc, label: "${label}" }`;
         break;
-      case 'extract':
+      }
+      case 'extract': {
         nodeText = `@{ shape: extract, label: "${label}" }`;
         break;
-      case 'lin-proc':
+      }
+      case 'lin-proc': {
         nodeText = `@{ shape: lin-proc, label: "${label}" }`;
         break;
-      case 'in-out':
+      }
+      case 'in-out': {
         nodeText = `@{ shape: in-out, label: "${label}" }`;
         break;
-      case 'out-in':
+      }
+      case 'out-in': {
         nodeText = `@{ shape: out-in, label: "${label}" }`;
         break;
-      case 'manual-file':
+      }
+      case 'manual-file': {
         nodeText = `@{ shape: manual-file, label: "${label}" }`;
         break;
-      case 'priority':
+      }
+      case 'priority': {
         nodeText = `@{ shape: priority, label: "${label}" }`;
         break;
-      case 'collate':
+      }
+      case 'collate': {
         nodeText = `@{ shape: collate, label: "${label}" }`;
         break;
-      case 'loop-limit':
+      }
+      case 'loop-limit': {
         nodeText = `@{ shape: loop-limit, label: "${label}" }`;
         break;
-      case 'manual-input':
+      }
+      case 'manual-input': {
         nodeText = `@{ shape: manual-input, label: "${label}" }`;
         break;
-      case 'event':
+      }
+      case 'event': {
         nodeText = `@{ shape: event, label: "${label}" }`;
         break;
-      case 'start':
+      }
+      case 'start': {
         nodeText = `@{ shape: start, label: "${label}" }`;
         break;
-      case 'stop':
+      }
+      case 'stop': {
         nodeText = `@{ shape: stop, label: "${label}" }`;
         break;
-      case 'terminal':
+      }
+      case 'terminal': {
         nodeText = `@{ shape: terminal, label: "${label}" }`;
         break;
-      case 'delay':
+      }
+      case 'delay': {
         nodeText = `@{ shape: delay, label: "${label}" }`;
         break;
-      case 'junction':
+      }
+      case 'junction': {
         nodeText = `@{ shape: junction, label: "${label}" }`;
         break;
-      case 'decision':
+      }
+      case 'decision': {
         nodeText = `@{ shape: decision, label: "${label}" }`;
         break;
-      case 'doc':
+      }
+      case 'doc': {
         nodeText = `@{ shape: doc, label: "${label}" }`;
         break;
-      case 'tag-doc':
+      }
+      case 'tag-doc': {
         nodeText = `@{ shape: tag-doc, label: "${label}" }`;
         break;
-      case 'docs':
+      }
+      case 'docs': {
         nodeText = `@{ shape: docs, label: "${label}" }`;
         break;
-      case 'comment':
+      }
+      case 'comment': {
         nodeText = `@{ shape: comment, label: "${label}" }`;
         break;
-      case 'brace-r':
+      }
+      case 'brace-r': {
         nodeText = `@{ shape: brace-r, label: "${label}" }`;
         break;
-      case 'braces':
+      }
+      case 'braces': {
         nodeText = `@{ shape: braces, label: "${label}" }`;
         break;
-      case 'summary':
+      }
+      case 'summary': {
         nodeText = `@{ shape: summary, label: "${label}" }`;
         break;
-      case 'lin-doc':
+      }
+      case 'lin-doc': {
         nodeText = `@{ shape: lin-doc, label: "${label}" }`;
         break;
+      }
       // Technical shapes
-      case 'db':
+      case 'db': {
         nodeText = `@{ shape: db, label: "${label}" }`;
         break;
-      case 'disk':
+      }
+      case 'disk': {
         nodeText = `@{ shape: disk, label: "${label}" }`;
         break;
-      case 'das':
+      }
+      case 'das': {
         nodeText = `@{ shape: das, label: "${label}" }`;
         break;
-      case 'internal-storage':
+      }
+      case 'internal-storage': {
         nodeText = `@{ shape: internal-storage, label: "${label}" }`;
         break;
-      case 'display':
+      }
+      case 'display': {
         nodeText = `@{ shape: display, label: "${label}" }`;
         break;
-      case 'stored-data':
+      }
+      case 'stored-data': {
         nodeText = `@{ shape: stored-data, label: "${label}" }`;
         break;
-      case 'com-link':
+      }
+      case 'com-link': {
         nodeText = `@{ shape: com-link, label: "${label}" }`;
         break;
-      case 'paper-tape':
+      }
+      case 'paper-tape': {
         nodeText = `@{ shape: paper-tape, label: "${label}" }`;
         break;
+      }
       // Legacy shapes for backwards compatibility
-      case 'circle':
+      case 'circle': {
         nodeText = `(${label})`;
         break;
-      case 'square':
+      }
+      case 'square': {
         nodeText = `[${label}]`;
         break;
-      case 'triangle':
+      }
+      case 'triangle': {
         nodeText = `>${label}]`;
         break;
-      case 'diamond':
+      }
+      case 'diamond': {
         nodeText = `{${label}}`;
         break;
-      default:
+      }
+      default: {
         nodeText = `[${label}]`;
+      }
     }
 
     const addition = `\n    ${newId}${nodeText}`;

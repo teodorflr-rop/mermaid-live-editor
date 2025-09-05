@@ -160,23 +160,23 @@
   // Drag-to-create helpers
   function selectNode(n: Element) {
     const svg = view?.querySelector('svg');
-    if (!svg) return;
+    if (!svg) {return;}
 
     // deselect previous
-    const prev = svg.querySelector('[data-selected="1"]');
-    if (prev && prev !== n) {
-      deselectNode(prev);
+    const previous = svg.querySelector('[data-selected="1"]');
+    if (previous && previous !== n) {
+      deselectNode(previous);
     }
     // mark this one selected
-    n.setAttribute('data-selected', '1');
+    n.dataset.selected = '1';
     const rect = n.querySelector<SVGRectElement>('rect');
     if (rect) {
       // save original attributes
-      if (!rect.getAttribute('data-orig-stroke')) {
+      if (!rect.dataset.origStroke) {
         const s = rect.getAttribute('stroke') || '';
         const sw = rect.getAttribute('stroke-width') || '';
-        rect.setAttribute('data-orig-stroke', s);
-        rect.setAttribute('data-orig-stroke-width', sw);
+        rect.dataset.origStroke = s;
+        rect.dataset.origStrokeWidth = sw;
       }
       rect.setAttribute('stroke', '#0f172a');
       rect.setAttribute('stroke-width', '2');
@@ -184,33 +184,33 @@
   }
 
   function deselectNode(n: Element) {
-    n.removeAttribute('data-selected');
+    delete n.dataset.selected;
     const rect = n.querySelector<SVGRectElement>('rect');
     if (rect) {
-      const orig = rect.getAttribute('data-orig-stroke');
-      const origw = rect.getAttribute('data-orig-stroke-width');
+      const orig = rect.dataset.origStroke;
+      const origw = rect.dataset.origStrokeWidth;
       if (orig !== null) {
-        if (orig === '') rect.removeAttribute('stroke');
-        else rect.setAttribute('stroke', orig);
+        if (orig === '') {rect.removeAttribute('stroke');}
+        else {rect.setAttribute('stroke', orig);}
       }
       if (origw !== null) {
-        if (origw === '') rect.removeAttribute('stroke-width');
-        else rect.setAttribute('stroke-width', origw);
+        if (origw === '') {rect.removeAttribute('stroke-width');}
+        else {rect.setAttribute('stroke-width', origw);}
       }
-      rect.removeAttribute('data-orig-stroke');
-      rect.removeAttribute('data-orig-stroke-width');
+      delete rect.dataset.origStroke;
+      delete rect.dataset.origStrokeWidth;
     }
   }
 
   function attachDragToCreate(svg: SVGSVGElement) {
     // remove previous handlers if any
-    svg.querySelectorAll('[data-drag-create]').forEach((el) => {
-      el.removeAttribute('data-drag-create');
-    });
+    for (const element of svg.querySelectorAll('[data-drag-create]')) {
+      delete element.dataset.dragCreate;
+    }
 
     const nodes = svg.querySelectorAll<SVGElement>('.node');
-    nodes.forEach((node) => {
-      if ((node as unknown as HTMLElement).dataset?.dragCreate) return;
+    for (const node of nodes) {
+      if ((node as unknown as HTMLElement).dataset?.dragCreate) {continue;}
       ((node as unknown as HTMLElement).dataset as any).dragCreate = '1';
 
       let dragging = false;
@@ -222,7 +222,7 @@
 
       const onPointerDown = (e: PointerEvent) => {
         // only proceed if pan is disabled
-        if (panZoomState.isPanEnabled) return;
+        if (panZoomState.isPanEnabled) {return;}
 
         pointerDownTime = Date.now();
         isDragAction = false;
@@ -234,7 +234,7 @@
       };
 
       const onPointerMove = (e: PointerEvent) => {
-        if (!startX || !startY) return;
+        if (!startX || !startY) {return;}
 
         const deltaX = Math.abs(e.clientX - startX);
         const deltaY = Math.abs(e.clientY - startY);
@@ -273,7 +273,7 @@
           tempLine.setAttribute('stroke-width', '2');
           tempLine.setAttribute('stroke-dasharray', '4');
           tempLine.style.pointerEvents = 'none';
-          svg.appendChild(tempLine);
+          svg.append(tempLine);
         }
 
         if (dragging && tempLine) {
@@ -292,7 +292,7 @@
         // If it was a drag action, check what we dropped on
         if (isDragAction && dragging) {
           dragging = false;
-          if (tempLine && tempLine.parentElement) tempLine.parentElement.removeChild(tempLine);
+          if (tempLine && tempLine.parentElement) {tempLine.remove();}
           tempLine = null;
 
           // Check if we dropped on another node
@@ -314,7 +314,7 @@
             const state = get(inputStateStore);
             const code = state.code || '';
             // create unique node id
-            const newId = 'N' + Math.floor(Math.random() * 100000);
+            const newId = 'N' + Math.floor(Math.random() * 100_000);
             // Append single connection (origin --> newNode[label])
             const originId = getNodeIdFromElement(node);
             const addition = `\n    ${originId} --> ${newId}[New node]`;
@@ -351,12 +351,12 @@
       node.addEventListener('pointerdown', onPointerDown);
       window.addEventListener('pointermove', onPointerMove);
       window.addEventListener('pointerup', onPointerUp);
-    });
+    }
 
     // Add click handlers for edges/relationships
     const edges = svg.querySelectorAll<SVGElement>('.edgePath path, .flowchart-link');
-    edges.forEach((edge) => {
-      if ((edge as unknown as HTMLElement).dataset?.edgeClick) return;
+    for (const edge of edges) {
+      if ((edge as unknown as HTMLElement).dataset?.edgeClick) {continue;}
       ((edge as unknown as HTMLElement).dataset as any).edgeClick = '1';
 
       const onEdgeClick = (e: PointerEvent) => {
@@ -424,7 +424,7 @@
       if (edge.parentNode) {
         edge.parentNode.insertBefore(overlay, edge.nextSibling);
       }
-    });
+    }
   }
 
   function getNodeIdFromElement(node: Element) {
@@ -435,14 +435,14 @@
       // Common mermaid ids look like: "flowchart-B-1" or "node-flowchart-B" or "rect-B"
       // Strip common prefixes and trailing numeric suffixes so we return the original short id (e.g. B)
       // Try to capture the central token between optional prefix and optional numeric suffix
-      const m = id.match(/^(?:[a-zA-Z]+-)?(.+?)(?:-\d+)?$/);
+      const m = id.match(/^(?:[A-Za-z]+-)?(.+?)(?:-\d+)?$/);
       if (m && m[1]) {
         return m[1].replace(/^node-/, '').replace(/^rect-/, '') || 'A';
       }
       return id.replace('node-', '').replace('rect-', '') || 'A';
     }
     const text = node.querySelector('text');
-    if (text?.textContent) return text.textContent.trim().replace(/\s+/g, '_');
+    if (text?.textContent) {return text.textContent.trim().replaceAll(/\s+/g, '_');}
     return 'A';
   }
 
