@@ -8,7 +8,6 @@
   import Preset from '$/components/Preset.svelte';
   import SyncRoughToolbar from '$/components/SyncRoughToolbar.svelte';
   import * as Resizable from '$/components/ui/resizable';
-  import { Switch } from '$/components/ui/switch';
   import VersionSecurityToolbar from '$/components/VersionSecurityToolbar.svelte';
   import View from '$/components/View.svelte';
   import type { EditorMode, Tab } from '$/types';
@@ -20,9 +19,9 @@
   import CodeIcon from '~icons/custom/code';
   import GearIcon from '~icons/material-symbols/settings-outline-rounded';
   // Create an unlinked node with a given mermaid shape id
+  import { env } from '$/util/env';
   import { inputStateStore, updateCode } from '$/util/state';
   import { get } from 'svelte/store';
-  import { env } from '$/util/env';
 
   const panZoomState = new PanZoomState();
 
@@ -48,18 +47,8 @@
   let isMobile = $derived(width < 640);
   let isViewMode = $state(true);
 
-  // Check for URL parameter override for easier testing
+  // Use view-only mode from environment configuration only
   let effectiveViewOnlyMode = $derived(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlOverride = urlParams.get('viewOnly');
-      if (urlOverride === 'true') {
-        return true;
-      }
-      if (urlOverride === 'false') {
-        return false;
-      }
-    }
     return env.viewOnlyMode;
   });
 
@@ -352,7 +341,6 @@
 </script>
 
 <div class="flex h-full flex-col overflow-hidden">
-
   <Navbar {effectiveViewOnlyMode}></Navbar>
 
   <div class="flex flex-1 flex-col overflow-hidden" bind:clientWidth={width}>
@@ -361,26 +349,6 @@
       <div class="relative flex h-full flex-1 flex-col overflow-hidden">
         <View {panZoomState} shouldShowGrid={$stateStore.grid} viewOnlyMode={true} />
         <div class="absolute bottom-0 right-0"><VersionSecurityToolbar /></div>
-        
-        <!-- Developer mode toggle for testing (only show if URL override is active) -->
-        {#if typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('viewOnly')}
-          <div class="absolute top-0 left-0 m-4">
-            <div class="flex items-center gap-2 rounded-md bg-gray-100 px-3 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-              <span>Dev Mode:</span>
-              <a 
-                href="?viewOnly=false" 
-                class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                Enable Editing
-              </a>
-              |
-              <a 
-                href="?" 
-                class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                Default
-              </a>
-            </div>
-          </div>
-        {/if}
       </div>
     {:else}
       <!-- Full interactive mode -->
@@ -389,26 +357,6 @@
           'size-full',
           isMobile && ['w-[200%] duration-300', isViewMode && '-translate-x-1/2']
         ]}>
-        <!-- Developer mode toggle for testing (only show if URL override is active) -->
-        {#if typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('viewOnly')}
-          <div class="absolute top-0 left-0 m-4 z-50">
-            <div class="flex items-center gap-2 rounded-md bg-gray-100 px-3 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-              <span>Dev Mode:</span>
-              <a 
-                href="?viewOnly=true" 
-                class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                View Only
-              </a>
-              |
-              <a 
-                href="?" 
-                class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                Default
-              </a>
-            </div>
-          </div>
-        {/if}
-        
         <Resizable.PaneGroup
           direction="horizontal"
           autoSaveId="liveEditor"

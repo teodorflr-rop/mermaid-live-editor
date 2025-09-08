@@ -163,7 +163,9 @@
   // Drag-to-create helpers
   function selectNode(n: Element) {
     const svg = view?.querySelector('svg');
-    if (!svg) {return;}
+    if (!svg) {
+      return;
+    }
 
     // deselect previous
     const previous = svg.querySelector('[data-selected="1"]');
@@ -193,12 +195,18 @@
       const orig = rect.dataset.origStroke;
       const origw = rect.dataset.origStrokeWidth;
       if (orig !== null) {
-        if (orig === '') {rect.removeAttribute('stroke');}
-        else {rect.setAttribute('stroke', orig);}
+        if (orig === '') {
+          rect.removeAttribute('stroke');
+        } else {
+          rect.setAttribute('stroke', orig);
+        }
       }
       if (origw !== null) {
-        if (origw === '') {rect.removeAttribute('stroke-width');}
-        else {rect.setAttribute('stroke-width', origw);}
+        if (origw === '') {
+          rect.removeAttribute('stroke-width');
+        } else {
+          rect.setAttribute('stroke-width', origw);
+        }
       }
       delete rect.dataset.origStroke;
       delete rect.dataset.origStrokeWidth;
@@ -213,7 +221,9 @@
 
     const nodes = svg.querySelectorAll<SVGElement>('.node');
     for (const node of nodes) {
-      if ((node as unknown as HTMLElement).dataset?.dragCreate) {continue;}
+      if ((node as unknown as HTMLElement).dataset?.dragCreate) {
+        continue;
+      }
       const nodeElement = node as unknown as HTMLElement;
       nodeElement.dataset.dragCreate = '1';
 
@@ -226,7 +236,9 @@
 
       const onPointerDown = (event: PointerEvent) => {
         // only proceed if pan is disabled
-        if (panZoomState.isPanEnabled) {return;}
+        if (panZoomState.isPanEnabled) {
+          return;
+        }
 
         pointerDownTime = Date.now();
         isDragAction = false;
@@ -238,7 +250,9 @@
       };
 
       const onPointerMove = (event: PointerEvent) => {
-        if (!startX || !startY) {return;}
+        if (!startX || !startY) {
+          return;
+        }
 
         const deltaX = Math.abs(event.clientX - startX);
         const deltaY = Math.abs(event.clientY - startY);
@@ -296,7 +310,9 @@
         // If it was a drag action, check what we dropped on
         if (isDragAction && dragging) {
           dragging = false;
-          if (tempLine && tempLine.parentElement) {tempLine.remove();}
+          if (tempLine && tempLine.parentElement) {
+            tempLine.remove();
+          }
           tempLine = null;
 
           // Check if we dropped on another node
@@ -360,7 +376,9 @@
     // Add click handlers for edges/relationships
     const edges = svg.querySelectorAll<SVGElement>('.edgePath path, .flowchart-link');
     for (const edge of edges) {
-      if ((edge as unknown as HTMLElement).dataset?.edgeClick) {continue;}
+      if ((edge as unknown as HTMLElement).dataset?.edgeClick) {
+        continue;
+      }
       const edgeElement = edge as unknown as HTMLElement;
       edgeElement.dataset.edgeClick = '1';
 
@@ -447,7 +465,9 @@
       return id.replace('node-', '').replace('rect-', '') || 'A';
     }
     const text = node.querySelector('text');
-    if (text?.textContent) {return text.textContent.trim().replaceAll(/\s+/g, '_');}
+    if (text?.textContent) {
+      return text.textContent.trim().replaceAll(/\s+/g, '_');
+    }
     return 'A';
   }
 

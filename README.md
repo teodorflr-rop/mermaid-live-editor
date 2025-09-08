@@ -66,8 +66,15 @@ In view-only mode:
 - Interactive toolbars for node/relationship editing are disabled
 - Drag-to-create node functionality is disabled
 - Only the diagram view and basic zoom/pan controls are available
+- A "View Only" indicator appears in the navigation bar
 
 Default is empty (false), enabling full interactive editing mode.
+
+Example:
+```bash
+docker build --build-arg MERMAID_VIEW_ONLY_MODE=true -t mermaid-live-editor .
+docker run -p 3000:80 mermaid-live-editor
+```
 
 ### To update the Security modal
 

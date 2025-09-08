@@ -23,7 +23,7 @@ ARG MERMAID_VIEW_ONLY_MODE
 
 COPY . ./
 
-RUN pnpm build
+RUN NODE_OPTIONS="--max_old_space_size=4096" pnpm build
 
 FROM mermaid-live-editor-builder AS mermaid-dev
 
