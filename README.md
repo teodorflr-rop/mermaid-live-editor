@@ -55,6 +55,20 @@ When building set the MERMAID_IS_ENABLED_MERMAID_CHART_LINKS build argument to `
 
 Default is empty, disabling button to save to Mermaid Chart and promotional banner.
 
+### To enable View-Only Mode
+
+When building set the MERMAID_VIEW_ONLY_MODE build argument to `true` to disable all editing features.
+
+This is useful for Docker deployments where you want to provide read-only diagram viewing without allowing users to edit diagrams or access interactive features.
+
+In view-only mode:
+- The code editor and configuration panels are hidden
+- Interactive toolbars for node/relationship editing are disabled
+- Drag-to-create node functionality is disabled
+- Only the diagram view and basic zoom/pan controls are available
+
+Default is empty (false), enabling full interactive editing mode.
+
 ### To update the Security modal
 
 The modal shown on clicking the security link assumes analytics, renderer, Kroki

@@ -22,6 +22,7 @@
   // Create an unlinked node with a given mermaid shape id
   import { inputStateStore, updateCode } from '$/util/state';
   import { get } from 'svelte/store';
+  import { env } from '$/util/env';
 
   const panZoomState = new PanZoomState();
 
@@ -47,6 +48,21 @@
   let isMobile = $derived(width < 640);
   let isViewMode = $state(true);
 
+  // Check for URL parameter override for easier testing
+  let effectiveViewOnlyMode = $derived(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlOverride = urlParams.get('viewOnly');
+      if (urlOverride === 'true') {
+        return true;
+      }
+      if (urlOverride === 'false') {
+        return false;
+      }
+    }
+    return env.viewOnlyMode;
+  });
+
   onMount(async () => {
     await initHandler();
     window.addEventListener('appinstalled', () => {
@@ -56,7 +72,7 @@
 
   let isHistoryOpen = $state(false);
 
-  let editorPane: Resizable.Pane | undefined;
+  let editorPane: Resizable.Pane | undefined = $state();
   $effect(() => {
     if (isMobile) {
       editorPane?.resize(50);
@@ -336,66 +352,104 @@
 </script>
 
 <div class="flex h-full flex-col overflow-hidden">
-  {#snippet mobileToggle()}
-    <div class="flex items-center gap-2">
-      Edit <Switch
-        id="editorMode"
-        class="data-[state=checked]:bg-accent"
-        bind:checked={isViewMode}
-        onclick={() => {
-          logEvent('mobileViewToggle');
-        }} /> View
-    </div>
-  {/snippet}
 
-  <Navbar></Navbar>
+  <Navbar {effectiveViewOnlyMode}></Navbar>
 
   <div class="flex flex-1 flex-col overflow-hidden" bind:clientWidth={width}>
-    <div
-      class={[
-        'size-full',
-        isMobile && ['w-[200%] duration-300', isViewMode && '-translate-x-1/2']
-      ]}>
-      <Resizable.PaneGroup
-        direction="horizontal"
-        autoSaveId="liveEditor"
-        class="gap-4 p-2 pt-0 sm:gap-0 sm:p-6 sm:pt-0">
-        <Resizable.Pane bind:this={editorPane} defaultSize={30} minSize={15}>
-          <div class="flex h-full flex-col gap-4 sm:gap-6">
-            <Card
-              onselect={tabSelectHandler}
-              isOpen
-              tabs={editorTabs}
-              activeTabID={$stateStore.editorMode}
-              isClosable={false}>
-              {#snippet actions()}
-                <DiagramDocButton />
-              {/snippet}
-              <Editor {isMobile} />
-            </Card>
-
-            <div class="group flex flex-wrap justify-between gap-4 sm:gap-6">
-              <Preset />
+    {#if effectiveViewOnlyMode}
+      <!-- View-only mode: Show only the diagram -->
+      <div class="relative flex h-full flex-1 flex-col overflow-hidden">
+        <View {panZoomState} shouldShowGrid={$stateStore.grid} viewOnlyMode={true} />
+        <div class="absolute bottom-0 right-0"><VersionSecurityToolbar /></div>
+        
+        <!-- Developer mode toggle for testing (only show if URL override is active) -->
+        {#if typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('viewOnly')}
+          <div class="absolute top-0 left-0 m-4">
+            <div class="flex items-center gap-2 rounded-md bg-gray-100 px-3 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+              <span>Dev Mode:</span>
+              <a 
+                href="?viewOnly=false" 
+                class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                Enable Editing
+              </a>
+              |
+              <a 
+                href="?" 
+                class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                Default
+              </a>
             </div>
           </div>
-        </Resizable.Pane>
-        <Resizable.Handle class="mr-1 hidden opacity-0 sm:block" />
-        <Resizable.Pane minSize={15} class="relative flex h-full flex-1 flex-col overflow-hidden">
-          <View {panZoomState} shouldShowGrid={$stateStore.grid} />
-          <div class="absolute right-0 top-0"><PanZoomToolbar {panZoomState} {createNode} /></div>
-          <div class="absolute bottom-0 right-0"><VersionSecurityToolbar /></div>
-          <div class="absolute bottom-0 left-0 sm:left-5"><SyncRoughToolbar /></div>
-        </Resizable.Pane>
-        {#if isHistoryOpen}
-          <Resizable.Handle class="ml-1 hidden opacity-0 sm:block" />
-          <Resizable.Pane
-            minSize={15}
-            defaultSize={30}
-            class="hidden h-full flex-grow flex-col sm:flex">
-            <History />
-          </Resizable.Pane>
         {/if}
-      </Resizable.PaneGroup>
-    </div>
+      </div>
+    {:else}
+      <!-- Full interactive mode -->
+      <div
+        class={[
+          'size-full',
+          isMobile && ['w-[200%] duration-300', isViewMode && '-translate-x-1/2']
+        ]}>
+        <!-- Developer mode toggle for testing (only show if URL override is active) -->
+        {#if typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('viewOnly')}
+          <div class="absolute top-0 left-0 m-4 z-50">
+            <div class="flex items-center gap-2 rounded-md bg-gray-100 px-3 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+              <span>Dev Mode:</span>
+              <a 
+                href="?viewOnly=true" 
+                class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                View Only
+              </a>
+              |
+              <a 
+                href="?" 
+                class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                Default
+              </a>
+            </div>
+          </div>
+        {/if}
+        
+        <Resizable.PaneGroup
+          direction="horizontal"
+          autoSaveId="liveEditor"
+          class="gap-4 p-2 pt-0 sm:gap-0 sm:p-6 sm:pt-0">
+          <Resizable.Pane bind:this={editorPane} defaultSize={30} minSize={15}>
+            <div class="flex h-full flex-col gap-4 sm:gap-6">
+              <Card
+                onselect={tabSelectHandler}
+                isOpen
+                tabs={editorTabs}
+                activeTabID={$stateStore.editorMode}
+                isClosable={false}>
+                {#snippet actions()}
+                  <DiagramDocButton />
+                {/snippet}
+                <Editor {isMobile} />
+              </Card>
+
+              <div class="group flex flex-wrap justify-between gap-4 sm:gap-6">
+                <Preset />
+              </div>
+            </div>
+          </Resizable.Pane>
+          <Resizable.Handle class="mr-1 hidden opacity-0 sm:block" />
+          <Resizable.Pane minSize={15} class="relative flex h-full flex-1 flex-col overflow-hidden">
+            <View {panZoomState} shouldShowGrid={$stateStore.grid} />
+            <div class="absolute right-0 top-0"><PanZoomToolbar {panZoomState} {createNode} /></div>
+            <div class="absolute bottom-0 right-0"><VersionSecurityToolbar /></div>
+            <div class="absolute bottom-0 left-0 sm:left-5"><SyncRoughToolbar /></div>
+          </Resizable.Pane>
+          {#if isHistoryOpen}
+            <Resizable.Handle class="ml-1 hidden opacity-0 sm:block" />
+            <Resizable.Pane
+              minSize={15}
+              defaultSize={30}
+              class="hidden h-full flex-grow flex-col sm:flex">
+              <History />
+            </Resizable.Pane>
+          {/if}
+        </Resizable.PaneGroup>
+      </div>
+    {/if}
   </div>
 </div>

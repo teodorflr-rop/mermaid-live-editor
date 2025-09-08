@@ -17,8 +17,9 @@
 
   let {
     panZoomState = new PanZoomState(),
-    shouldShowGrid = true
-  }: { panZoomState?: PanZoomState; shouldShowGrid?: boolean } = $props();
+    shouldShowGrid = true,
+    viewOnlyMode = false
+  }: { panZoomState?: PanZoomState; shouldShowGrid?: boolean; viewOnlyMode?: boolean } = $props();
   let code = '';
   let config = '';
   let container: HTMLDivElement | undefined = $state();
@@ -123,8 +124,10 @@
             if (bindFunctions) {
               bindFunctions(graphDiv);
             }
-            // Attach drag-to-create-node handlers when pan is disabled
-            attachDragToCreate(graphDiv);
+            // Attach drag-to-create-node handlers when pan is disabled (only in interactive mode)
+            if (!viewOnlyMode) {
+              attachDragToCreate(graphDiv);
+            }
           }
           if (state.panZoom) {
             handlePanZoom(state, graphDiv);
@@ -211,7 +214,8 @@
     const nodes = svg.querySelectorAll<SVGElement>('.node');
     for (const node of nodes) {
       if ((node as unknown as HTMLElement).dataset?.dragCreate) {continue;}
-      ((node as unknown as HTMLElement).dataset as any).dragCreate = '1';
+      const nodeElement = node as unknown as HTMLElement;
+      nodeElement.dataset.dragCreate = '1';
 
       let dragging = false;
       let startX = 0;
@@ -220,24 +224,24 @@
       let isDragAction = false;
       let pointerDownTime = 0;
 
-      const onPointerDown = (e: PointerEvent) => {
+      const onPointerDown = (event: PointerEvent) => {
         // only proceed if pan is disabled
         if (panZoomState.isPanEnabled) {return;}
 
         pointerDownTime = Date.now();
         isDragAction = false;
-        startX = e.clientX;
-        startY = e.clientY;
+        startX = event.clientX;
+        startY = event.clientY;
 
         // Don't start dragging immediately - wait for movement
-        svg.setPointerCapture?.(e.pointerId);
+        svg.setPointerCapture?.(event.pointerId);
       };
 
-      const onPointerMove = (e: PointerEvent) => {
+      const onPointerMove = (event: PointerEvent) => {
         if (!startX || !startY) {return;}
 
-        const deltaX = Math.abs(e.clientX - startX);
-        const deltaY = Math.abs(e.clientY - startY);
+        const deltaX = Math.abs(event.clientX - startX);
+        const deltaY = Math.abs(event.clientY - startY);
         const dragThreshold = 5; // pixels
 
         // If we've moved beyond threshold, start drag action
@@ -260,8 +264,8 @@
           const nodeCenterY = nodeRect.top + nodeRect.height / 2 - svgRect.top;
 
           // Current pointer position relative to SVG
-          const currentSvgX = e.clientX - svgRect.left;
-          const currentSvgY = e.clientY - svgRect.top;
+          const currentSvgX = event.clientX - svgRect.left;
+          const currentSvgY = event.clientY - svgRect.top;
 
           // create temporary line from node center to current position
           tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -279,15 +283,15 @@
         if (dragging && tempLine) {
           // Convert current screen coordinates to SVG coordinates
           const svgRect = svg.getBoundingClientRect();
-          const svgCurrentX = e.clientX - svgRect.left;
-          const svgCurrentY = e.clientY - svgRect.top;
+          const svgCurrentX = event.clientX - svgRect.left;
+          const svgCurrentY = event.clientY - svgRect.top;
 
           tempLine.setAttribute('x2', String(svgCurrentX));
           tempLine.setAttribute('y2', String(svgCurrentY));
         }
       };
-      const onPointerUp = async (e: PointerEvent) => {
-        svg.releasePointerCapture?.(e.pointerId);
+      const onPointerUp = async (event: PointerEvent) => {
+        svg.releasePointerCapture?.(event.pointerId);
 
         // If it was a drag action, check what we dropped on
         if (isDragAction && dragging) {
@@ -296,7 +300,7 @@
           tempLine = null;
 
           // Check if we dropped on another node
-          const elementUnderPointer = document.elementFromPoint(e.clientX, e.clientY);
+          const elementUnderPointer = document.elementFromPoint(event.clientX, event.clientY);
           const targetNode = elementUnderPointer?.closest('.node');
 
           if (targetNode && targetNode !== node) {
@@ -357,11 +361,12 @@
     const edges = svg.querySelectorAll<SVGElement>('.edgePath path, .flowchart-link');
     for (const edge of edges) {
       if ((edge as unknown as HTMLElement).dataset?.edgeClick) {continue;}
-      ((edge as unknown as HTMLElement).dataset as any).edgeClick = '1';
+      const edgeElement = edge as unknown as HTMLElement;
+      edgeElement.dataset.edgeClick = '1';
 
-      const onEdgeClick = (e: PointerEvent) => {
+      const onEdgeClick = (event: PointerEvent) => {
         // Prevent event bubbling
-        e.stopPropagation();
+        event.stopPropagation();
 
         // Close node toolbar if open
         showNodeToolbar = false;
@@ -460,13 +465,13 @@
 
     if (match) {
       const indent = match[1];
-      const newNodeDef = `${indent}${nodeId}@{ shape: ${shapeId}, label: "Updated node" }`;
-      const newCode = code.replace(nodeRegex, newNodeDef);
+      const newNodeDefinition = `${indent}${nodeId}@{ shape: ${shapeId}, label: "Updated node" }`;
+      const newCode = code.replace(nodeRegex, newNodeDefinition);
       updateCode(newCode, { updateDiagram: true });
     } else {
       // If not found, try to add at the end
-      const newNodeDef = `\n    ${nodeId}@{ shape: ${shapeId}, label: "Updated node" }`;
-      updateCode(code + newNodeDef, { updateDiagram: true });
+      const newNodeDefinition = `\n    ${nodeId}@{ shape: ${shapeId}, label: "Updated node" }`;
+      updateCode(code + newNodeDefinition, { updateDiagram: true });
     }
   }
 
@@ -573,6 +578,7 @@
   function deleteRelationship(relationshipId: string) {
     // For now, just close the toolbar without deleting anything
     // since we need better relationship identification logic
+    console.log('Would delete relationship:', relationshipId);
     showRelationshipToolbar = false;
 
     // TODO: Implement proper relationship deletion when we have
@@ -594,7 +600,7 @@
   <div id="container" bind:this={container} class="h-full overflow-auto"></div>
 </div>
 
-{#if showNodeToolbar}
+{#if !viewOnlyMode && showNodeToolbar}
   <NodeToolbar
     nodeId={selectedNodeId}
     position={nodeToolbarPosition}
@@ -603,7 +609,7 @@
     onClose={closeNodeToolbar} />
 {/if}
 
-{#if showRelationshipToolbar}
+{#if !viewOnlyMode && showRelationshipToolbar}
   <RelationshipToolbar
     relationshipId={selectedRelationshipId}
     position={relationshipToolbarPosition}
