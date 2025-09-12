@@ -15,13 +15,20 @@
   import { stateStore, updateCodeStore } from '$/util/state';
   import { logEvent } from '$/util/stats';
   import { initHandler } from '$/util/util';
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import CodeIcon from '~icons/custom/code';
   import GearIcon from '~icons/material-symbols/settings-outline-rounded';
   // Create an unlinked node with a given mermaid shape id
-  import { env } from '$/util/env';
+  import { addHistoryEntry, getPreviousState } from '$/components/History/history';
+  import { Button } from '$/components/ui/button';
+  import { notify } from '$/util/notify';
   import { inputStateStore, updateCode } from '$/util/state';
   import { get } from 'svelte/store';
+  import SaveIcon from '~icons/material-symbols/save-outline-rounded';
+  import type { PageData } from './$types';
+
+  // Receive the mode from the page.ts loader
+  let { data }: { data: PageData } = $props();
 
   const panZoomState = new PanZoomState();
 
@@ -47,19 +54,74 @@
   let isMobile = $derived(width < 640);
   let isViewMode = $state(true);
 
-  // Use view-only mode from environment configuration only
-  let effectiveViewOnlyMode = $derived(() => {
-    return env.viewOnlyMode;
-  });
+  // Use the mode parameter to determine view-only behavior
+  // mode=view: Show in read-only mode
+  // mode=edit: Show full editor with editing capabilities
+  let effectiveViewOnlyMode = $derived(data.mode === 'view');
+
+  // Store unsubscribe function for cleanup
+  let unsubscribeLiferay: (() => void) | null = null;
 
   onMount(async () => {
     await initHandler();
     window.addEventListener('appinstalled', () => {
       logEvent('pwaInstalled', { isMobile });
     });
+
+    // Expose SvelteKit state and functions to global window for Liferay integration
+    if (typeof window !== 'undefined') {
+      window.inputStateStore = inputStateStore;
+      window.updateCode = updateCode;
+      window.get = get;
+
+      // Setup content change listener for Liferay autosave
+      if (window.mermaidLiferayIntegration) {
+        // Listen to state changes and trigger autosave
+        unsubscribeLiferay = inputStateStore.subscribe((state) => {
+          if (window.mermaidLiferayIntegration) {
+            window.mermaidLiferayIntegration.triggerContentChange();
+          }
+        });
+      }
+    }
+  });
+
+  onDestroy(() => {
+    // Cleanup Liferay subscription
+    if (unsubscribeLiferay) {
+      unsubscribeLiferay();
+    }
   });
 
   let isHistoryOpen = $state(false);
+
+  // Save function - saves current state to history
+  const handleSave = () => {
+    const currentState = get(inputStateStore);
+    const stateString = JSON.stringify(currentState);
+    const previousState = getPreviousState(false);
+
+    if (previousState !== stateString) {
+      addHistoryEntry({
+        state: currentState,
+        time: Date.now(),
+        type: 'manual'
+      });
+      notify('State saved successfully!');
+      logEvent('history', { action: 'save', source: 'toolbar' });
+    } else {
+      notify('State already saved.');
+    }
+
+    // Liferay integration: trigger save event for backend
+    if (
+      typeof window !== 'undefined' &&
+      window.mermaidLiferayIntegration &&
+      typeof window.mermaidLiferayIntegration.handleSave === 'function'
+    ) {
+      window.mermaidLiferayIntegration.handleSave();
+    }
+  };
 
   let editorPane: Resizable.Pane | undefined = $state();
   $effect(() => {
@@ -341,7 +403,34 @@
 </script>
 
 <div class="flex h-full flex-col overflow-hidden">
-  <Navbar {effectiveViewOnlyMode}></Navbar>
+  <Navbar {effectiveViewOnlyMode}>
+    <!-- Right side content: Save button and Mode indicator -->
+    <div class="ml-auto flex items-center gap-4">
+      <!-- Save button - only show in edit mode -->
+      {#if !effectiveViewOnlyMode}
+        <Button
+          variant="outline"
+          size="sm"
+          onclick={handleSave}
+          class="flex items-center gap-2"
+          title="Save current state to history">
+          <SaveIcon class="h-4 w-4" />
+          Save
+        </Button>
+      {/if}
+
+      <!-- Mode indicator -->
+      <div class="flex items-center gap-2 text-sm">
+        <span class="text-gray-600 dark:text-gray-400">Mode:</span>
+        <span
+          class="font-medium {data.mode === 'view'
+            ? 'text-blue-600 dark:text-blue-400'
+            : 'text-green-600 dark:text-green-400'}">
+          {data.mode === 'view' ? 'View Only' : 'Edit'}
+        </span>
+      </div>
+    </div>
+  </Navbar>
 
   <div class="flex flex-1 flex-col overflow-hidden" bind:clientWidth={width}>
     {#if effectiveViewOnlyMode}

@@ -1,11 +1,8 @@
-version: '3.7'
 services:
   mermaid:
     build:
       context: .
-      target: mermaid-dev
-    volumes:
-      - ./src:/app/src
+      target: mermaid
+    # Production image serves static files; do not mount source code
     ports:
-      - 3000:3000
-      - 24678:24678
+      - "3001:80"
