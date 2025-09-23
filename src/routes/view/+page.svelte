@@ -109,7 +109,7 @@
 </svelte:head>
 
 <div class="relative h-full w-full">
-  <View shouldShowGrid={false} on:rendered={onViewRendered} />
+  <View shouldShowGrid={false} viewOnlyMode={true} on:rendered={onViewRendered} />
 
   {#if showLoader}
     <div class="absolute inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur">
