@@ -62,6 +62,70 @@
   // Store unsubscribe function for cleanup
   let unsubscribeLiferay: (() => void) | null = null;
 
+  // Loader state: show until diagram emits 'rendered' or fallback timeout
+  let showLoader = $state(true);
+  let loaderTimeout: ReturnType<typeof setTimeout> | null = null;
+  // If we expect content from parent (iframe), track that
+  let contentLoadedFromParent = $state(false);
+  const isInIframe = typeof window !== 'undefined' && window.self !== window.top;
+  // Show a small rendering message while mermaid renders the diagram
+  let showRenderingMessage = $state(false);
+  let renderingMessageTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  function handleParentContentLoaded(event?: CustomEvent | Event) {
+    // mark content loaded
+    contentLoadedFromParent = true;
+    // hide loader and show rendering message to reduce perceived delay
+    showLoader = false;
+    if (loaderTimeout) {
+      clearTimeout(loaderTimeout);
+      loaderTimeout = null;
+    }
+    showRenderingMessage = true;
+    if (renderingMessageTimeout) {
+      clearTimeout(renderingMessageTimeout);
+    }
+    renderingMessageTimeout = setTimeout(() => {
+      showRenderingMessage = false;
+      renderingMessageTimeout = null;
+    }, 1500);
+  }
+
+  // function called when View dispatches 'rendered'
+  function onViewRendered(_: any) {
+    // If we are inside an iframe and expecting parent content, wait for content load
+    if (isInIframe) {
+      // If parent already loaded content (race-safe), hide loader now
+      if (window.__mermaidLiferay_lastLoad || contentLoadedFromParent) {
+        showLoader = false;
+        showRenderingMessage = false;
+        if (renderingMessageTimeout) {
+          clearTimeout(renderingMessageTimeout);
+          renderingMessageTimeout = null;
+        }
+        if (loaderTimeout) {
+          clearTimeout(loaderTimeout);
+          loaderTimeout = null;
+        }
+      } else {
+        // otherwise keep loader visible until parent content arrives (or fallback)
+        console.debug('View rendered but waiting for parent content');
+      }
+    } else {
+      // Not in iframe: hide loader immediately
+      showLoader = false;
+      showRenderingMessage = false;
+      if (renderingMessageTimeout) {
+        clearTimeout(renderingMessageTimeout);
+        renderingMessageTimeout = null;
+      }
+      if (loaderTimeout) {
+        clearTimeout(loaderTimeout);
+        loaderTimeout = null;
+      }
+    }
+  }
+
   onMount(async () => {
     await initHandler();
     window.addEventListener('appinstalled', () => {
@@ -84,12 +148,38 @@
         });
       }
     }
+    // Start a fallback timeout so loader doesn't remain visible forever
+    if (loaderTimeout == null) {
+      loaderTimeout = setTimeout(() => {
+        showLoader = false;
+        loaderTimeout = null;
+      }, 5000);
+    }
+
+    // Listen for parent content load event (from integration script)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('mermaid:contentLoaded', handleParentContentLoaded as EventListener);
+    }
   });
 
   onDestroy(() => {
     // Cleanup Liferay subscription
     if (unsubscribeLiferay) {
       unsubscribeLiferay();
+    }
+    if (loaderTimeout) {
+      clearTimeout(loaderTimeout);
+      loaderTimeout = null;
+    }
+    if (renderingMessageTimeout) {
+      clearTimeout(renderingMessageTimeout);
+      renderingMessageTimeout = null;
+    }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener(
+        'mermaid:contentLoaded',
+        handleParentContentLoaded as EventListener
+      );
     }
   });
 
@@ -428,6 +518,12 @@
             : 'text-green-600 dark:text-green-400'}">
           {data.mode === 'view' ? 'View Only' : 'Edit'}
         </span>
+        {#if showRenderingMessage}
+          <span
+            class="ml-2 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
+            Rendering...
+          </span>
+        {/if}
       </div>
     </div>
   </Navbar>
@@ -436,7 +532,20 @@
     {#if effectiveViewOnlyMode}
       <!-- View-only mode: Show only the diagram -->
       <div class="relative flex h-full flex-1 flex-col overflow-hidden">
-        <View {panZoomState} shouldShowGrid={$stateStore.grid} viewOnlyMode={true} />
+        <View
+          {panZoomState}
+          shouldShowGrid={$stateStore.grid}
+          viewOnlyMode={true}
+          on:rendered={onViewRendered} />
+        {#if showLoader}
+          <div class="page-loader">
+            <div class="flex items-center">
+              <div class="loader-dot"></div>
+              <div class="loader-dot"></div>
+              <div class="loader-dot"></div>
+            </div>
+          </div>
+        {/if}
         <div class="absolute bottom-0 right-0"><VersionSecurityToolbar /></div>
       </div>
     {:else}
@@ -471,7 +580,16 @@
           </Resizable.Pane>
           <Resizable.Handle class="mr-1 hidden opacity-0 sm:block" />
           <Resizable.Pane minSize={15} class="relative flex h-full flex-1 flex-col overflow-hidden">
-            <View {panZoomState} shouldShowGrid={$stateStore.grid} />
+            <View {panZoomState} shouldShowGrid={$stateStore.grid} on:rendered={onViewRendered} />
+            {#if showLoader}
+              <div class="page-loader">
+                <div class="flex items-center">
+                  <div class="loader-dot"></div>
+                  <div class="loader-dot"></div>
+                  <div class="loader-dot"></div>
+                </div>
+              </div>
+            {/if}
             <div class="absolute right-0 top-0"><PanZoomToolbar {panZoomState} {createNode} /></div>
             <div class="absolute bottom-0 right-0"><VersionSecurityToolbar /></div>
             <div class="absolute bottom-0 left-0 sm:left-5"><SyncRoughToolbar /></div>
@@ -490,3 +608,45 @@
     {/if}
   </div>
 </div>
+
+<style>
+  .page-loader {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 60;
+    backdrop-filter: blur(2px);
+  }
+
+  .loader-dot {
+    width: 10px;
+    height: 10px;
+    margin: 0 6px;
+    background: #2563eb;
+    border-radius: 50%;
+    animation: loader-bounce 0.8s infinite ease-in-out;
+  }
+
+  .loader-dot:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+  .loader-dot:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+
+  @keyframes loader-bounce {
+    0%,
+    80%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.6;
+    }
+    40% {
+      transform: translateY(-8px);
+      opacity: 1;
+    }
+  }
+</style>

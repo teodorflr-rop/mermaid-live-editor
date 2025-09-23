@@ -11,7 +11,7 @@
   import uniqueID from 'lodash-es/uniqueId';
   import type { MermaidConfig } from 'mermaid';
   import { mode } from 'mode-watcher';
-  import { onMount } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import { get } from 'svelte/store';
   import { Svg2Roughjs } from 'svg2roughjs';
 
@@ -47,6 +47,9 @@
       logEvent('panZoom');
     };
   };
+
+  // Event dispatcher for notifying parents when rendering completes
+  const dispatch = createEventDispatcher();
 
   const handlePanZoom = (state: State, graphDiv: SVGSVGElement) => {
     panZoomState.updateElement(graphDiv, state);
@@ -149,6 +152,13 @@
     recordRenderTime(renderTime, () => {
       $inputStateStore.updateDiagram = true;
     });
+    // Notify parent components that rendering finished
+    // (dispatch so consumers can hide loaders)
+    try {
+      dispatch && dispatch('rendered', { renderTime, diagramType });
+    } catch (e) {
+      // ignore dispatch errors
+    }
   };
 
   onMount(() => {

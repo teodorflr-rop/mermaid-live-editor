@@ -4,7 +4,7 @@
   import { toggleDarkTheme } from '$/util/state';
   import { initHandler } from '$/util/util';
   import { base } from '$app/paths';
-  import { mode, ModeWatcher } from 'mode-watcher';
+  import { mode, ModeWatcher, setMode } from 'mode-watcher';
   import { onMount, type Snippet } from 'svelte';
   import '../app.postcss';
 
@@ -17,6 +17,14 @@
   // This can be removed once https://github.com/sveltejs/kit/issues/1612 is fixed.
   // Then move it into src and vite will bundle it automatically.
   onMount(() => {
+    // Force light mode by default on the client unless user or OS preference overrides later
+    if (typeof window !== 'undefined') {
+      try {
+        setMode('light');
+      } catch (e) {
+        // ignore if setMode isn't available for some reason
+      }
+    }
     window.addEventListener('hashchange', () => {
       void initHandler();
     });

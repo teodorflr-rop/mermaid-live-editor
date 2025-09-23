@@ -63,6 +63,14 @@ class MermaidLiferayIntegration {
             window.updateCode(content, { updateDiagram: true });
         }
 
+        // Mark that we received a load from parent so pages can detect it (race-safe)
+        try {
+            window.__mermaidLiferay_lastLoad = Date.now();
+            window.dispatchEvent(new CustomEvent('mermaid:contentLoaded', { detail: content }));
+        } catch (e) {
+            // ignore
+        }
+
         // Call all registered content change callbacks
         this.contentChangeCallbacks.forEach(callback => {
             try {
