@@ -1,6 +1,6 @@
-import { writable, get, type Writable } from 'svelte/store';
-import { persist, localStorage } from '$lib/util/persist';
 import { injectHistoryIDs } from '$lib/components/History/history';
+import { localStorage, persist } from '$lib/util/persist';
+import { get, writable, type Writable } from 'svelte/store';
 import { logEvent } from './stats';
 
 interface MigrationState {
@@ -23,10 +23,10 @@ export const applyMigrations = (): void => {
   if (version === allMigrations.length - 1) {
     return;
   }
-  console.log(`Current migration version: v${version}. Migrating to v${allMigrations.length - 1}.`);
+  // console.log(`Current migration version: v${version}. Migrating to v${allMigrations.length - 1}.`);
   for (let i = version + 1; i < allMigrations.length; i++) {
     const [key, fn] = allMigrations[i];
-    console.log(`Applying migration ${i}: ${key}.`);
+    // console.log(`Applying migration ${i}: ${key}.`);
     fn();
     logEvent('migration', { key });
     migrationStore.set({ version: i });

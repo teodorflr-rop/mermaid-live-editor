@@ -163,7 +163,7 @@ export const urlsStore = derived([stateStore], ([{ code, serialized }]) => {
 
 export const loadState = (data: string): void => {
   let state: State;
-  console.log(`Loading '${data}'`);
+  // console.log(`Loading '${data}'`);
   try {
     state = deserializeState(data);
     if (!state.mermaid) {

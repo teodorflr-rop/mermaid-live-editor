@@ -595,7 +595,7 @@
         if (strokeType) {
           // Handle stroke type changes (this would need more sophisticated logic)
           // For now, just log that stroke changes aren't fully implemented
-          console.log('Stroke type changes not fully implemented yet');
+          // console.log('Stroke type changes not fully implemented yet');
         }
       }
       return line;
@@ -608,7 +608,7 @@
   function deleteRelationship(relationshipId: string) {
     // For now, just close the toolbar without deleting anything
     // since we need better relationship identification logic
-    console.log('Would delete relationship:', relationshipId);
+    // console.log('Would delete relationship:', relationshipId);
     showRelationshipToolbar = false;
 
     // TODO: Implement proper relationship deletion when we have

@@ -15,7 +15,7 @@ export const initAnalytics = async (): Promise<void> => {
         hashMode: false
       });
     } catch (error) {
-      console.log(error);
+  // console.log(error);
       console.info('Analytics blocked ;)');
     }
   }

@@ -16,9 +16,9 @@ class MermaidLiferayIntegration {
 
     // Initialize the integration
     init() {
-        console.log('Mermaid-Liferay integration initialized');
-        console.log('Edit mode:', this.isEditMode);
-        console.log('In iframe:', this.isInIframe);
+        // console.log('Mermaid-Liferay integration initialized');
+        // console.log('Edit mode:', this.isEditMode);
+        // console.log('In iframe:', this.isInIframe);
 
         // Don't create save button as it's already handled by SvelteKit
         // Just setup the integration for message handling
@@ -43,7 +43,7 @@ class MermaidLiferayIntegration {
             const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
 
             if (data && data.action === 'load') {
-                console.log('Loading content from parent:', data.content?.substring(0, 100) + '...');
+                // console.log('Loading content from parent:', data.content?.substring(0, 100) + '...');
                 this.loadContent(data.content || '');
             }
         } catch (error) {
@@ -89,13 +89,13 @@ class MermaidLiferayIntegration {
     // Handle save button click - called from SvelteKit save button
     handleSave() {
         if (!this.isInIframe) {
-            console.log('Not in iframe, no Liferay save needed');
+            // console.log('Not in iframe, no Liferay save needed');
             return;
         }
 
         try {
             const currentContent = this.getCurrentDiagramContent();
-            console.log('Saving Mermaid content to Liferay:', currentContent.substring(0, 100) + '...');
+            // console.log('Saving Mermaid content to Liferay:', currentContent.substring(0, 100) + '...');
 
             // Send save message to parent (this triggers the backend save and redirect)
             window.parent.postMessage({
@@ -104,7 +104,7 @@ class MermaidLiferayIntegration {
             }, '*');
 
             // Visual feedback
-            this.showSaveMessage('Saving to Liferay...');
+            // this.showSaveMessage('Saving to Liferay...');
 
         } catch (error) {
             console.error('Error during Liferay save:', error);
@@ -115,21 +115,19 @@ class MermaidLiferayIntegration {
     // Handle exit action - notify parent similarly to save but with action 'exit'
     handleExit() {
         if (!this.isInIframe) {
-            console.log('Not in iframe, no Liferay exit needed');
+            // console.log('Not in iframe, no Liferay exit needed');
             return;
         }
 
         try {
             const currentContent = this.getCurrentDiagramContent();
-            console.log('Flagging exit to Liferay with current content:', currentContent.substring(0, 100) + '...');
+            // console.log('Flagging exit to Liferay with current content:', currentContent.substring(0, 100) + '...');
 
             // Send exit message to parent (parent can decide how to handle: save+close/redirect)
             window.parent.postMessage({
                 action: 'exit',
                 content: currentContent
             }, '*');
-
-            this.showSaveMessage('Exiting: notifying Liferay...');
 
         } catch (error) {
             console.error('Error during Liferay exit:', error);
@@ -290,4 +288,4 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = MermaidLiferayIntegration;
 }
 
-console.log('Mermaid-Liferay Integration loaded for SvelteKit!');
+// console.log('Mermaid-Liferay Integration loaded for SvelteKit!');

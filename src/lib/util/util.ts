@@ -42,7 +42,7 @@ let count = 0;
 export const errorDebug = (limit = 1000) => {
   count += 1;
   if (count > limit) {
-    console.log(count, limit);
+    // console.log(count, limit);
     // eslint-disable-next-line no-debugger
     debugger;
   }
