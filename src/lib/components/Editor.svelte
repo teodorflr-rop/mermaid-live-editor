@@ -1,12 +1,8 @@
 <script lang="ts">
   import DesktopEditor from '$/components/DesktopEditor.svelte';
-  import McWrapper from '$/components/McWrapper.svelte';
-  import MermaidChartIcon from '$/components/MermaidChartIcon.svelte';
   import MobileEditor from '$/components/MobileEditor.svelte';
-  import { Button } from '$/components/ui/button';
   import { TID } from '$/constants';
-  import { env } from '$/util/env';
-  import { stateStore, updateCode, updateConfig, urlsStore } from '$lib/util/state';
+  import { stateStore, updateCode, updateConfig } from '$lib/util/state';
   import ExclamationCircleIcon from '~icons/material-symbols/error-outline-rounded';
 
   let { isMobile }: { isMobile: boolean } = $props();
@@ -32,10 +28,10 @@
           <ExclamationCircleIcon class="size-6 text-destructive" aria-hidden="true" />
           <div class="flex flex-col">
             <p>Syntax error</p>
-              <!-- AI repair prompt removed for view-only UX preference -->
+            <!-- AI repair prompt removed for view-only UX preference -->
           </div>
         </div>
-          <!-- AI Repair button intentionally removed -->
+        <!-- AI Repair button intentionally removed -->
       </div>
       <output class="max-h-32 overflow-auto bg-muted p-2" name="mermaid-error" for="editor">
         <pre>{$stateStore.error?.toString()}</pre>
