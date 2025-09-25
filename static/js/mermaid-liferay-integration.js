@@ -112,6 +112,31 @@ class MermaidLiferayIntegration {
         }
     }
 
+    // Handle exit action - notify parent similarly to save but with action 'exit'
+    handleExit() {
+        if (!this.isInIframe) {
+            console.log('Not in iframe, no Liferay exit needed');
+            return;
+        }
+
+        try {
+            const currentContent = this.getCurrentDiagramContent();
+            console.log('Flagging exit to Liferay with current content:', currentContent.substring(0, 100) + '...');
+
+            // Send exit message to parent (parent can decide how to handle: save+close/redirect)
+            window.parent.postMessage({
+                action: 'exit',
+                content: currentContent
+            }, '*');
+
+            this.showSaveMessage('Exiting: notifying Liferay...');
+
+        } catch (error) {
+            console.error('Error during Liferay exit:', error);
+            this.showSaveMessage('Liferay exit failed: ' + error.message, true);
+        }
+    }
+
     // Auto-save handler (optional)
     handleAutoSave() {
         if (!this.isInIframe) return;

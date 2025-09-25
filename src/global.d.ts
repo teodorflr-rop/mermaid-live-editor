@@ -8,6 +8,7 @@ declare global {
         mermaidLiferayIntegration?: {
             handleSave: () => void;
             handleAutoSave: () => void;
+            handleExit: () => void;
             triggerContentChange: () => void;
             getCurrentDiagramContent: () => string;
             showSaveMessage: (message: string, isError?: boolean) => void;

@@ -213,6 +213,40 @@
     }
   };
 
+  // Exit handler: notify Liferay backend similar to save, then request parent to perform exit
+  const handleExit = () => {
+    // Prefer integration's handleExit if available (will do save+exit behavior)
+    if (
+      typeof window !== 'undefined' &&
+      window.mermaidLiferayIntegration &&
+      typeof window.mermaidLiferayIntegration.handleExit === 'function'
+    ) {
+      try {
+        window.mermaidLiferayIntegration.handleExit();
+        return;
+      } catch (e) {
+        console.warn('mermaidLiferayIntegration.handleExit failed, falling back', e);
+      }
+    }
+
+    // Fallback: ensure we at least trigger a save and notify parent exit
+    if (
+      typeof window !== 'undefined' &&
+      window.mermaidLiferayIntegration &&
+      typeof window.mermaidLiferayIntegration.handleSave === 'function'
+    ) {
+      window.mermaidLiferayIntegration.handleSave();
+    }
+
+    if (typeof window !== 'undefined' && window.self !== window.top) {
+      try {
+        window.parent.postMessage({ action: 'exit' }, '*');
+      } catch (e) {
+        console.warn('Could not post exit to parent', e);
+      }
+    }
+  };
+
   let editorPane: Resizable.Pane | undefined = $state();
   $effect(() => {
     if (isMobile) {
@@ -506,6 +540,15 @@
           title="Save current state to history">
           <SaveIcon class="h-4 w-4" />
           Save
+        </Button>
+        <!-- Exit button - flags Liferay backend like Save and requests parent exit -->
+        <Button
+          variant="outline"
+          size="sm"
+          onclick={handleExit}
+          class="flex items-center gap-2"
+          title="Exit and flag backend">
+          Exit
         </Button>
       {/if}
 
